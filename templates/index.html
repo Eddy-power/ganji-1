@@ -27,7 +27,7 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
             width: 100%;
-            max-width: 500px;
+            max-width: 550px;
         }
         
         h1 {
@@ -48,12 +48,12 @@
             font-weight: 500;
         }
         
-        .date-inputs {
+        .date-inputs, .time-inputs {
             display: flex;
             gap: 10px;
         }
         
-        .date-inputs input {
+        .date-inputs input, .time-inputs input, .time-inputs select {
             flex: 1;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -63,9 +63,22 @@
             transition: border-color 0.3s;
         }
         
-        .date-inputs input:focus {
+        .date-inputs input:focus, .time-inputs input:focus, .time-inputs select:focus {
             outline: none;
             border-color: #667eea;
+        }
+        
+        .time-inputs select {
+            cursor: pointer;
+            background: white;
+        }
+        
+        .time-separator {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            color: #666;
+            padding: 0 5px;
         }
         
         .calendar-type {
@@ -179,6 +192,7 @@
         .result-value {
             color: #333;
             font-weight: 600;
+            text-align: right;
         }
         
         .gapja-section {
@@ -190,18 +204,46 @@
         
         .gapja-section h4 {
             color: #667eea;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .gapja-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        
+        .gapja-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .gapja-value {
+            text-align: right;
         }
         
         .gapja-korean {
-            font-size: 1.3em;
+            font-size: 1.2em;
             color: #333;
-            margin-bottom: 5px;
         }
         
         .gapja-chinese {
-            font-size: 1.5em;
+            font-size: 1.3em;
             color: #764ba2;
+            margin-left: 10px;
+        }
+        
+        .time-gapja-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+        }
+        
+        .time-info {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 3px;
         }
         
         .error {
@@ -217,6 +259,23 @@
         .error.show {
             display: block;
         }
+        
+        .input-with-label {
+            position: relative;
+        }
+        
+        .input-with-label span {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            pointer-events: none;
+        }
+        
+        .input-with-label input {
+            padding-right: 35px;
+        }
     </style>
 </head>
 <body>
@@ -226,9 +285,36 @@
         <div class="form-group">
             <label>날짜 입력</label>
             <div class="date-inputs">
-                <input type="number" id="year" placeholder="년" min="1900" max="2100" value="2024">
-                <input type="number" id="month" placeholder="월" min="1" max="12" value="1">
-                <input type="number" id="day" placeholder="일" min="1" max="31" value="1">
+                <div class="input-with-label">
+                    <input type="number" id="year" placeholder="년" min="1900" max="2100" value="2024">
+                    <span>년</span>
+                </div>
+                <div class="input-with-label">
+                    <input type="number" id="month" placeholder="월" min="1" max="12" value="1">
+                    <span>월</span>
+                </div>
+                <div class="input-with-label">
+                    <input type="number" id="day" placeholder="일" min="1" max="31" value="1">
+                    <span>일</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>시간 입력 (24시간제)</label>
+            <div class="time-inputs">
+                <select id="hour">
+                    <option value="" disabled>시</option>
+                </select>
+                <span class="time-separator">:</span>
+                <select id="minute">
+                    <option value="" disabled>분</option>
+                </select>
+                <span style="padding: 0 5px; color: #999;">또는</span>
+                <div class="input-with-label" style="flex: 0.7;">
+                    <input type="number" id="minuteInput" placeholder="분" min="0" max="59" style="padding-right: 30px;">
+                    <span>분</span>
+                </div>
             </div>
         </div>
         
@@ -266,14 +352,62 @@
             </div>
             <div class="gapja-section">
                 <h4>간지력 (干支曆)</h4>
-                <div class="gapja-korean" id="koreanGapja"></div>
-                <div class="gapja-chinese" id="chineseGapja"></div>
+                <div class="gapja-row">
+                    <span class="gapja-label">년월일</span>
+                    <div class="gapja-value">
+                        <span class="gapja-korean" id="koreanGapja"></span>
+                        <span class="gapja-chinese" id="chineseGapja"></span>
+                    </div>
+                </div>
+                <div class="time-gapja-section">
+                    <div class="gapja-row">
+                        <span class="gapja-label">시간</span>
+                        <div class="gapja-value">
+                            <span class="gapja-korean" id="timeGapjaKr"></span>
+                            <span class="gapja-chinese" id="timeGapjaCn"></span>
+                        </div>
+                    </div>
+                    <div class="time-info" id="timeInfo"></div>
+                </div>
             </div>
         </div>
     </div>
     
     <script>
         let calendarType = 'solar';
+        
+        function initTimeSelects() {
+            const hourSelect = document.getElementById('hour');
+            const minuteSelect = document.getElementById('minute');
+            
+            for (let i = 0; i < 24; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i.toString().padStart(2, '0') + '시';
+                if (i === 12) option.selected = true;
+                hourSelect.appendChild(option);
+            }
+            
+            for (let i = 0; i < 60; i += 10) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i.toString().padStart(2, '0') + '분';
+                if (i === 0) option.selected = true;
+                minuteSelect.appendChild(option);
+            }
+            
+            document.getElementById('minuteInput').addEventListener('input', function() {
+                if (this.value !== '') {
+                    document.getElementById('minute').value = '';
+                }
+            });
+            
+            document.getElementById('minute').addEventListener('change', function() {
+                if (this.value !== '') {
+                    document.getElementById('minuteInput').value = '';
+                }
+            });
+        }
         
         function setCalendarType(type) {
             calendarType = type;
@@ -282,10 +416,22 @@
             document.getElementById('intercalationGroup').classList.toggle('show', type === 'lunar');
         }
         
+        function getMinuteValue() {
+            const minuteInput = document.getElementById('minuteInput').value;
+            const minuteSelect = document.getElementById('minute').value;
+            
+            if (minuteInput !== '') {
+                return parseInt(minuteInput);
+            }
+            return parseInt(minuteSelect) || 0;
+        }
+        
         async function convert() {
             const year = document.getElementById('year').value;
             const month = document.getElementById('month').value;
             const day = document.getElementById('day').value;
+            const hour = document.getElementById('hour').value;
+            const minute = getMinuteValue();
             const isIntercalation = document.getElementById('intercalation').checked;
             
             if (!year || !month || !day) {
@@ -303,6 +449,8 @@
                         year: year,
                         month: month,
                         day: day,
+                        hour: parseInt(hour),
+                        minute: minute,
                         calendar_type: calendarType,
                         is_intercalation: isIntercalation
                     })
@@ -315,7 +463,7 @@
                     document.getElementById('result').classList.add('show');
                     
                     document.getElementById('inputDate').textContent = 
-                        data.input_type + ' ' + data.input_date;
+                        data.input_type + ' ' + data.input_date + ' ' + data.input_time;
                     document.getElementById('solarDate').textContent = data.solar_date;
                     
                     let lunarText = data.lunar_date;
@@ -326,6 +474,11 @@
                     
                     document.getElementById('koreanGapja').textContent = data.korean_gapja;
                     document.getElementById('chineseGapja').textContent = data.chinese_gapja;
+                    
+                    document.getElementById('timeGapjaKr').textContent = data.time_gapja_kr;
+                    document.getElementById('timeGapjaCn').textContent = data.time_gapja_cn;
+                    document.getElementById('timeInfo').textContent = 
+                        data.time_name_kr + ' (' + data.time_name_cn + ') - ' + data.time_range;
                 } else {
                     showError('변환 오류: ' + data.error);
                 }
@@ -340,6 +493,8 @@
             errorEl.textContent = message;
             errorEl.classList.add('show');
         }
+        
+        initTimeSelects();
     </script>
 </body>
 </html>
