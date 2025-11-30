@@ -310,11 +310,6 @@
                 <select id="minute">
                     <option value="" disabled>분</option>
                 </select>
-                <span style="padding: 0 5px; color: #999;">또는</span>
-                <div class="input-with-label" style="flex: 0.7;">
-                    <input type="number" id="minuteInput" placeholder="분" min="0" max="59" style="padding-right: 30px;">
-                    <span>분</span>
-                </div>
             </div>
         </div>
         
@@ -395,18 +390,6 @@
                 if (i === 0) option.selected = true;
                 minuteSelect.appendChild(option);
             }
-            
-            document.getElementById('minuteInput').addEventListener('input', function() {
-                if (this.value !== '') {
-                    document.getElementById('minute').value = '';
-                }
-            });
-            
-            document.getElementById('minute').addEventListener('change', function() {
-                if (this.value !== '') {
-                    document.getElementById('minuteInput').value = '';
-                }
-            });
         }
         
         function setCalendarType(type) {
@@ -417,13 +400,7 @@
         }
         
         function getMinuteValue() {
-            const minuteInput = document.getElementById('minuteInput').value;
-            const minuteSelect = document.getElementById('minute').value;
-            
-            if (minuteInput !== '') {
-                return parseInt(minuteInput);
-            }
-            return parseInt(minuteSelect) || 0;
+            return parseInt(document.getElementById('minute').value) || 0;
         }
         
         async function convert() {
