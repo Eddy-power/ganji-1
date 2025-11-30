@@ -94,6 +94,12 @@ def convert():
     result = {}
     
     try:
+        if year < 1880 or year > 2050:
+            return jsonify({
+                'success': False,
+                'error': f'지원 가능한 연도 범위는 1880년~2050년입니다. 입력하신 {year}년은 변환할 수 없습니다.'
+            })
+        
         if calendar_type == 'solar':
             calendar.setSolarDate(year, month, day)
         else:
