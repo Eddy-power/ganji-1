@@ -3,7 +3,7 @@ from korean_lunar_calendar import KoreanLunarCalendar
 calendar = KoreanLunarCalendar()
 
 calendar.setSolarDate(2021, 9, 8) 
-print("양력 21년 2월 23일은 음력으로", calendar .LunarIsoFormat(), "입니다")
+print("양력 2021년 9월 8일은 음력으로", calendar.LunarIsoFormat(), "입니다")
 print(calendar .getGapJaString())
 print(calendar.getChineseGapJaString())
 
