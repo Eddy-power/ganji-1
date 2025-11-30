@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>음력/양력 변환기</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .date-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .date-inputs input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        
+        .date-inputs input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .calendar-type {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .calendar-type button {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .calendar-type button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .calendar-type button:hover:not(.active) {
+            border-color: #667eea;
+        }
+        
+        .intercalation-group {
+            display: none;
+            margin-top: 15px;
+        }
+        
+        .intercalation-group.show {
+            display: block;
+        }
+        
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .convert-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        .convert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result h3 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .result-value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .gapja-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            border-radius: 10px;
+        }
+        
+        .gapja-section h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .gapja-korean {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .gapja-chinese {
+            font-size: 1.5em;
+            color: #764ba2;
+        }
+        
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            padding: 15px;
+            background: #fdf0f0;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>음력/양력 변환기</h1>
+        
+        <div class="form-group">
+            <label>날짜 입력</label>
+            <div class="date-inputs">
+                <input type="number" id="year" placeholder="년" min="1900" max="2100" value="2024">
+                <input type="number" id="month" placeholder="월" min="1" max="12" value="1">
+                <input type="number" id="day" placeholder="일" min="1" max="31" value="1">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>입력 날짜 유형</label>
+            <div class="calendar-type">
+                <button id="solarBtn" class="active" onclick="setCalendarType('solar')">양력</button>
+                <button id="lunarBtn" onclick="setCalendarType('lunar')">음력</button>
+            </div>
+            <div class="intercalation-group" id="intercalationGroup">
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="intercalation">
+                    <label for="intercalation" style="margin: 0;">윤달 (閏月)</label>
+                </div>
+            </div>
+        </div>
+        
+        <button class="convert-btn" onclick="convert()">변환하기</button>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="result" id="result">
+            <h3>변환 결과</h3>
+            <div class="result-row">
+                <span class="result-label">입력</span>
+                <span class="result-value" id="inputDate"></span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">양력</span>
+                <span class="result-value" id="solarDate"></span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">음력</span>
+                <span class="result-value" id="lunarDate"></span>
+            </div>
+            <div class="gapja-section">
+                <h4>간지력 (干支曆)</h4>
+                <div class="gapja-korean" id="koreanGapja"></div>
+                <div class="gapja-chinese" id="chineseGapja"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let calendarType = 'solar';
+        
+        function setCalendarType(type) {
+            calendarType = type;
+            document.getElementById('solarBtn').classList.toggle('active', type === 'solar');
+            document.getElementById('lunarBtn').classList.toggle('active', type === 'lunar');
+            document.getElementById('intercalationGroup').classList.toggle('show', type === 'lunar');
+        }
+        
+        async function convert() {
+            const year = document.getElementById('year').value;
+            const month = document.getElementById('month').value;
+            const day = document.getElementById('day').value;
+            const isIntercalation = document.getElementById('intercalation').checked;
+            
+            if (!year || !month || !day) {
+                showError('날짜를 모두 입력해주세요.');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        year: year,
+                        month: month,
+                        day: day,
+                        calendar_type: calendarType,
+                        is_intercalation: isIntercalation
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('error').classList.remove('show');
+                    document.getElementById('result').classList.add('show');
+                    
+                    document.getElementById('inputDate').textContent = 
+                        data.input_type + ' ' + data.input_date;
+                    document.getElementById('solarDate').textContent = data.solar_date;
+                    
+                    let lunarText = data.lunar_date;
+                    if (data.is_intercalation) {
+                        lunarText = lunarText.replace(' Intercalation', ' (윤달)');
+                    }
+                    document.getElementById('lunarDate').textContent = lunarText;
+                    
+                    document.getElementById('koreanGapja').textContent = data.korean_gapja;
+                    document.getElementById('chineseGapja').textContent = data.chinese_gapja;
+                } else {
+                    showError('변환 오류: ' + data.error);
+                }
+            } catch (error) {
+                showError('서버 연결 오류가 발생했습니다.');
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('result').classList.remove('show');
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+    </script>
+</body>
+</html>
